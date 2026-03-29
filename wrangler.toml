@@ -2,12 +2,19 @@ name = "roadchain-worker"
 main = "src/index.js"
 compatibility_date = "2024-09-01"
 workers_dev = true
-# routes temporarily disabled - existing worker on roadchain.io
 
+[[d1_databases]]
+binding = "DB"
+database_name = "roundtrip"
+database_id = "ec4efdfb-a76e-46fb-a821-1278e17e7b90"
 
 [vars]
 APP_NAME = "RoadChain"
 ROADCOIN_DOMAIN = "https://roadcoin.io"
+BASE_CHAIN_ID = "8453"
+BASE_RPC = "https://mainnet.base.org"
 
-# Set secrets: wrangler secret put COINBASE_API_KEY
-# Set secrets: wrangler secret put COINBASE_PROJECT_ID
+# Secrets needed:
+# wrangler secret put COINBASE_API_KEY
+# wrangler secret put COINBASE_PROJECT_ID
+# wrangler secret put COINBASE_WEBHOOK_SECRET
