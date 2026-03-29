@@ -1,0 +1,13 @@
+name = "roadchain-worker"
+main = "src/index.js"
+compatibility_date = "2024-09-01"
+workers_dev = true
+# routes temporarily disabled - existing worker on roadchain.io
+
+
+[vars]
+APP_NAME = "RoadChain"
+ROADCOIN_DOMAIN = "https://roadcoin.io"
+
+# Set secrets: wrangler secret put COINBASE_API_KEY
+# Set secrets: wrangler secret put COINBASE_PROJECT_ID
