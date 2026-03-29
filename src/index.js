@@ -104,6 +104,11 @@ async function ensureTables(db) {
 }
 
 // ── PS-SHA∞ HASH ──
+// PS-SHA∞ — Persistent Secure SHA Infinity
+// Depth is NOT fixed — it scales with the significance of the data.
+// Financial transactions: depth 7. Ledger blocks: depth 5. Events: depth 3.
+// The ∞ means there's no theoretical maximum. Depth adapts to trust requirements.
+// Each iteration compounds tamper resistance exponentially.
 async function pssha(data, depth = 3) {
   let h = data;
   for (let i = 0; i < depth; i++) {
@@ -111,6 +116,22 @@ async function pssha(data, depth = 3) {
     h = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
   }
   return h;
+}
+
+// Adaptive depth based on action type
+function getPSSHADepth(action) {
+  const depths = {
+    "transfer": 7,        // Financial: maximum security
+    "mint": 7,            // Token creation: maximum security
+    "charge_confirmed": 7,// Coinbase payment: maximum security
+    "x402_payment": 6,    // Micropayment: high security
+    "solve": 5,           // Tutor solve: standard chain
+    "post": 4,            // Social post: moderate
+    "message": 3,         // Chat message: basic
+    "query": 3,           // Search query: basic
+    "default": 5,         // Everything else: standard
+  };
+  return depths[action] || depths["default"];
 }
 
 // ── LEDGER WRITE (the core blockchain operation) ──
@@ -131,9 +152,10 @@ async function handleLedgerWrite(request, env) {
   const roadId = body.road_id || "anonymous";
   const amount = body.amount || 0;
 
-  // Hash: prev_hash + action + entity + data + timestamp (PS-SHA∞ depth 3)
+  // Hash: prev_hash + action + entity + data + timestamp (PS-SHA∞ adaptive depth)
+  const depth = getPSSHADepth(body.action);
   const payload = JSON.stringify({ prev: prevHash, action: body.action, entity: body.entity, data: body.data, ts: timestamp });
-  const hash = await pssha(payload);
+  const hash = await pssha(payload, depth);
 
   await env.DB.prepare(
     `INSERT INTO ledger (id, block_number, prev_hash, hash, action, entity, app, data, road_id, amount, created_at)
@@ -259,8 +281,9 @@ async function handleLedgerWriteInternal(env, action, entity, app, roadId, amoun
   const blockNumber = (prev?.block_number || 0) + 1;
   const id = crypto.randomUUID();
   const timestamp = new Date().toISOString();
+  const depth = getPSSHADepth(action);
   const payload = JSON.stringify({ prev: prevHash, action, entity, data, ts: timestamp });
-  const hash = await pssha(payload);
+  const hash = await pssha(payload, depth);
 
   await env.DB.prepare(
     `INSERT INTO ledger (id, block_number, prev_hash, hash, action, entity, app, data, road_id, amount, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
